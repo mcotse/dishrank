@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
@@ -6,6 +6,8 @@ import { useAuthStore } from '../stores/authStore'
 export function useAuth() {
   const { user, isLoading, isAuthenticated, setUser, setLoading, signOut: clearAuth } = useAuthStore()
   const navigate = useNavigate()
+  const [magicLinkSent, setMagicLinkSent] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   // Initialize auth state from Supabase session
   useEffect(() => {
@@ -26,36 +28,29 @@ export function useAuth() {
     }
   }, [setUser])
 
-  // Sign in with Google
-  const signInWithGoogle = useCallback(async () => {
+  // Sign in with magic link
+  const signInWithMagicLink = useCallback(async (email: string) => {
     setLoading(true)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+    setAuthError(null)
+    setMagicLinkSent(false)
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
       options: {
-        redirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL || '/'}`,
       },
     })
 
-    if (error) {
-      console.error('Google sign-in error:', error)
-      setLoading(false)
-    }
-  }, [setLoading])
-
-  // Sign in with Apple
-  const signInWithApple = useCallback(async () => {
-    setLoading(true)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'apple',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      },
-    })
+    setLoading(false)
 
     if (error) {
-      console.error('Apple sign-in error:', error)
-      setLoading(false)
+      console.error('Magic link error:', error)
+      setAuthError(error.message)
+      return false
     }
+
+    setMagicLinkSent(true)
+    return true
   }, [setLoading])
 
   // Sign out
@@ -75,9 +70,14 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated,
-    signInWithGoogle,
-    signInWithApple,
+    magicLinkSent,
+    authError,
+    signInWithMagicLink,
     signOut,
+    resetAuthState: () => {
+      setMagicLinkSent(false)
+      setAuthError(null)
+    },
   }
 }
 
