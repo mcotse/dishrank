@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { DishEntryData, CuisineCategory, CuisineSubcategory } from '../types'
+import type { DishEntryData, CuisineCategory, CuisineSubcategory, PlaceType } from '../types'
 
 type EntryStep = 'dish' | 'restaurant' | 'cuisine' | 'photo' | 'complete'
 
@@ -17,6 +17,12 @@ interface EntryState {
 
   setDishName: (name: string) => void
   setRestaurant: (restaurant: DishEntryData['restaurant']) => void
+  setCustomPlace: (customPlace: {
+    name: string
+    city: string
+    place_type: PlaceType
+    address?: string
+  }) => void
   setCuisineCategory: (category: CuisineCategory | null) => void
   setCuisineSubcategory: (subcategory: CuisineSubcategory | null) => void
   setPhoto: (file: File | null, preview: string | null) => void
@@ -30,6 +36,8 @@ const STEP_ORDER: EntryStep[] = ['dish', 'restaurant', 'cuisine', 'photo', 'comp
 const initialData: DishEntryData = {
   dishName: '',
   restaurant: null,
+  customPlace: null,
+  isCustomPlace: false,
   cuisineCategory: null,
   cuisineSubcategory: null,
   photoFile: null,
@@ -65,7 +73,22 @@ export const useEntryStore = create<EntryState>()((set, get) => ({
 
   setRestaurant: (restaurant) =>
     set((state) => ({
-      data: { ...state.data, restaurant },
+      data: {
+        ...state.data,
+        restaurant,
+        customPlace: null,
+        isCustomPlace: false,
+      },
+    })),
+
+  setCustomPlace: (customPlace) =>
+    set((state) => ({
+      data: {
+        ...state.data,
+        customPlace,
+        restaurant: null,
+        isCustomPlace: true,
+      },
     })),
 
   setCuisineCategory: (cuisineCategory) =>

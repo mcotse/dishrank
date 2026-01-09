@@ -8,10 +8,12 @@ import {
   loadGoogleMapsScript,
   isPlacesApiAvailable,
 } from '../../lib/places'
-import type { PlacePrediction } from '../../types'
+import { CustomPlaceForm } from './CustomPlaceForm'
+import type { PlacePrediction, PlaceType } from '../../types'
 
 export function RestaurantStep() {
-  const { data, setRestaurant, nextStep, prevStep } = useEntryStore()
+  const { data, setRestaurant, setCustomPlace, nextStep, prevStep } = useEntryStore()
+  const [showCustomPlaceForm, setShowCustomPlaceForm] = useState(false)
   const [query, setQuery] = useState(data.restaurant?.name || '')
   const [predictions, setPredictions] = useState<PlacePrediction[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -94,6 +96,36 @@ export function RestaurantStep() {
       address: '',
     })
     nextStep()
+  }
+
+  const handleCustomPlaceSubmit = (placeData: {
+    name: string
+    city: string
+    place_type: PlaceType
+    address?: string
+  }) => {
+    setCustomPlace({
+      name: placeData.name,
+      city: placeData.city,
+      place_type: placeData.place_type,
+      address: placeData.address,
+    })
+    setShowCustomPlaceForm(false)
+    nextStep()
+  }
+
+  // Show custom place form
+  if (showCustomPlaceForm) {
+    return (
+      <div className="flex-1 flex flex-col px-6 py-8">
+        <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
+          <CustomPlaceForm
+            onSubmit={handleCustomPlaceSubmit}
+            onCancel={() => setShowCustomPlaceForm(false)}
+          />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -182,6 +214,25 @@ export function RestaurantStep() {
             Continue with "{query}" manually
           </button>
         )}
+
+        {/* Custom place option */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <p className="text-sm text-gray-500 mb-3">
+            Can't find it? Not a restaurant?
+          </p>
+          <button
+            onClick={() => setShowCustomPlaceForm(true)}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-orange-300 hover:text-orange-600 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add a custom place
+          </button>
+          <p className="text-xs text-gray-400 mt-2 text-center">
+            For home cooking, food trucks, pop-ups, etc.
+          </p>
+        </div>
       </div>
 
       <div className="mt-auto pt-6">

@@ -8,13 +8,36 @@ export interface User {
   created_at: string
 }
 
+// Place type enum for custom places
+export type PlaceType = 'restaurant' | 'home' | 'food_truck' | 'popup' | 'other'
+
+export const PLACE_TYPE_LABELS: Record<PlaceType, string> = {
+  restaurant: 'Restaurant',
+  home: 'Home',
+  food_truck: 'Food Truck',
+  popup: 'Pop-up',
+  other: 'Other',
+}
+
+export const PLACE_TYPE_ICONS: Record<PlaceType, string> = {
+  restaurant: '🍽️',
+  home: '🏠',
+  food_truck: '🚚',
+  popup: '🎪',
+  other: '📍',
+}
+
 export interface Restaurant {
   id: string
-  google_place_id: string
+  google_place_id: string | null
   name: string
   city: string
   address: string | null
   is_closed: boolean
+  is_custom_place: boolean
+  place_type: PlaceType
+  photo_url: string | null
+  created_by: string | null
   created_at: string
 }
 
@@ -89,10 +112,28 @@ export interface DishEntryData {
     city: string
     address: string
   } | null
+  customPlace: {
+    name: string
+    city: string
+    place_type: PlaceType
+    address?: string
+    photoFile?: File | null
+    photoPreview?: string | null
+  } | null
+  isCustomPlace: boolean
   cuisineCategory: CuisineCategory | null
   cuisineSubcategory: CuisineSubcategory | null
   photoFile: File | null
   photoPreview: string | null
+}
+
+// Custom place creation data
+export interface CustomPlaceData {
+  name: string
+  city: string
+  place_type: PlaceType
+  address?: string
+  photo_url?: string
 }
 
 // Comparison types
@@ -132,9 +173,12 @@ export interface PlaceDetails {
 }
 
 // Filter types
+export type SourceFilter = 'all' | 'restaurants' | 'homemade'
+
 export interface LeaderboardFilters {
   cuisineCategoryId: string | null
   cuisineSubcategoryId: string | null
   city: string | null
   viewMode: 'community' | 'personal' | 'friends'
+  source: SourceFilter
 }

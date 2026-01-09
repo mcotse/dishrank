@@ -10,6 +10,7 @@ export function LeaderboardList() {
     cuisineSubcategoryId: null,
     city: null,
     viewMode: 'community',
+    source: 'all',
   })
 
   const { data: dishes = [], isLoading, error } = useLeaderboard(filters)
@@ -82,7 +83,7 @@ export function LeaderboardList() {
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">No dishes yet</h2>
           <p className="text-gray-500">
-            {filters.cuisineCategoryId || filters.city
+            {filters.cuisineCategoryId || filters.city || filters.source !== 'all'
               ? 'No dishes match your filters. Try adjusting them.'
               : 'Start adding dishes to see them ranked here.'}
           </p>
