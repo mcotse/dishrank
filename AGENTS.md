@@ -38,6 +38,11 @@ Required in `.env.local` for local dev and GitHub Secrets for deployment:
 - Auto version bump: GitHub Action bumps patch version after each commit
 - Skip auto-bump by adding `[skip-version]` to commit message
 
+## Git Workflow
+- Always pull from origin before pushing: `git pull --rebase && git push`
+- GitHub Actions auto-bump version after each commit, so remote will have new commits
+- This avoids push rejections due to automated commits
+
 ## Custom Places
 - Restaurants table supports both Google Places and custom places
 - `is_custom_place` boolean distinguishes between types
