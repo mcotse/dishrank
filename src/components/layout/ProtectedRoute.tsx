@@ -1,75 +1,17 @@
-import { type ReactNode, useEffect } from 'react'
+import { type ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
-import { supabase, hasValidCredentials } from '../../lib/supabase'
 
 interface ProtectedRouteProps {
   children: ReactNode
 }
 
+/**
+ * ProtectedRoute guards routes that require authentication.
+ * Auth initialization is handled by AuthProvider at the app level.
+ */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, setUser } = useAuthStore()
-
-  // Initialize auth state - this MUST run in ProtectedRoute because
-  // child components don't mount until isLoading is false
-  useEffect(() => {
-    // Check for auth errors in URL hash (from failed magic link)
-    const hash = window.location.hash
-    if (hash.includes('error=')) {
-      const params = new URLSearchParams(hash.substring(1))
-      const errorDesc = params.get('error_description')
-      if (errorDesc) {
-        console.error('Auth error:', decodeURIComponent(errorDesc.replace(/\+/g, ' ')))
-      }
-      // Clear the hash
-      window.history.replaceState(null, '', window.location.pathname)
-      setUser(null)
-      return
-    }
-
-    // If no valid credentials, skip Supabase and go to auth
-    if (!hasValidCredentials) {
-      setUser(null)
-      return
-    }
-
-    let mounted = true
-
-    // Set a timeout to handle slow responses
-    const timeout = setTimeout(() => {
-      if (mounted) {
-        setUser(null)
-      }
-    }, 3000)
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        clearTimeout(timeout)
-        setUser(session?.user ?? null)
-      }
-    }).catch(() => {
-      if (mounted) {
-        clearTimeout(timeout)
-        setUser(null)
-      }
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) {
-        setUser(session?.user ?? null)
-      }
-    })
-
-    return () => {
-      mounted = false
-      clearTimeout(timeout)
-      subscription.unsubscribe()
-    }
-  }, [setUser])
+  const { isAuthenticated, isLoading } = useAuthStore()
 
   if (isLoading) {
     return (

@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ProtectedRoute } from './components/layout'
+import { ProtectedRoute, AuthProvider } from './components/layout'
 import { AuthPage, HomePage, EntryPage, ComparePage, LeaderboardPage, ManagePlacesPage } from './pages'
 
 const queryClient = new QueryClient({
@@ -16,7 +16,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <Routes>
+        <AuthProvider>
+          <Routes>
           {/* Public routes */}
           <Route path="/auth" element={<AuthPage />} />
 
@@ -61,7 +62,8 @@ function App() {
               </ProtectedRoute>
             }
           />
-        </Routes>
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   )
