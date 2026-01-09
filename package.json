@@ -1,7 +1,7 @@
 {
   "name": "dish-rank",
   "private": true,
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Rank your favorite dishes with Elo ratings",
   "type": "module",
   "scripts": {
