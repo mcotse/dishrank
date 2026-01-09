@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useComparison } from '../../hooks/useComparison'
 import { useUserDishes } from '../../hooks/useDishes'
@@ -10,14 +10,20 @@ export function ComparisonView() {
   const location = useLocation()
   const navigate = useNavigate()
   const { data: userDishesData } = useUserDishes()
+  const hasInitialized = useRef(false)
 
-  // Extract canonical dishes from user entries
-  const allDishes: DishWithDetails[] =
-    userDishesData?.map((entry) => entry.canonical_dish as DishWithDetails) || []
+  // Extract canonical dishes from user entries - memoize to prevent infinite loops
+  const allDishes: DishWithDetails[] = useMemo(
+    () => userDishesData?.map((entry) => entry.canonical_dish as DishWithDetails) || [],
+    [userDishesData]
+  )
 
   // Get the newly added dish if coming from entry flow
   const newDishId = (location.state as { newDishId?: string })?.newDishId
-  const targetDish = newDishId ? allDishes.find((d) => d.id === newDishId) : undefined
+  const targetDish = useMemo(
+    () => (newDishId ? allDishes.find((d) => d.id === newDishId) : undefined),
+    [newDishId, allDishes]
+  )
 
   const {
     currentPair,
@@ -36,14 +42,15 @@ export function ComparisonView() {
     allDishes,
   })
 
-  // Generate comparisons on mount
+  // Generate comparisons on mount - only once when we have dishes
   useEffect(() => {
-    if (allDishes.length >= 2) {
-      if (targetDish) {
-        generateComparisons()
-      } else {
-        generateRandomComparisons()
-      }
+    if (hasInitialized.current || allDishes.length < 2) return
+
+    hasInitialized.current = true
+    if (targetDish) {
+      generateComparisons()
+    } else {
+      generateRandomComparisons()
     }
   }, [allDishes.length, targetDish, generateComparisons, generateRandomComparisons])
 
