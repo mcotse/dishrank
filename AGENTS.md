@@ -37,3 +37,11 @@ Required in `.env.local` for local dev and GitHub Secrets for deployment:
 - TypeScript declarations in `src/vite-env.d.ts`
 - Auto version bump: GitHub Action bumps patch version after each commit
 - Skip auto-bump by adding `[skip-version]` to commit message
+
+## Custom Places
+- Restaurants table supports both Google Places and custom places
+- `is_custom_place` boolean distinguishes between types
+- `place_type` enum: restaurant, home, food_truck, popup, other
+- Custom places have nullable `google_place_id`
+- Entry wizard can switch between restaurant search and custom place form
+- Leaderboard has source filter: All / Restaurants / Homemade
