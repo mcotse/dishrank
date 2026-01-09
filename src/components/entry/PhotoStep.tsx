@@ -164,7 +164,6 @@ export function PhotoStep({ onComplete, isSubmitting }: PhotoStepProps) {
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={handleInputChange}
           className="hidden"
         />
