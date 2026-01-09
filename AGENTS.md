@@ -30,3 +30,10 @@ Required in `.env.local` for local dev and GitHub Secrets for deployment:
 - Migrations in `supabase/migrations/`
 - RLS policies are defined in migration files
 - Storage bucket `dish-photos` for user uploads
+
+## Versioning
+- Version injected at build time via Vite `define` config
+- Globals: `__APP_VERSION__`, `__BUILD_NUMBER__`, `__COMMIT_HASH__`, `__BUILD_TIME__`
+- TypeScript declarations in `src/vite-env.d.ts`
+- Auto version bump: GitHub Action bumps patch version after each commit
+- Skip auto-bump by adding `[skip-version]` to commit message
