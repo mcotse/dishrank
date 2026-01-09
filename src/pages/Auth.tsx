@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Input, VersionInfo } from '../components/ui'
+import { hasValidCredentials } from '../lib/supabase'
 
 export function AuthPage() {
   const navigate = useNavigate()
@@ -124,6 +125,16 @@ export function AuthPage() {
           </div>
         </div>
       </div>
+
+      {/* Config warning */}
+      {!hasValidCredentials && (
+        <div className="w-full max-w-sm mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-amber-800 text-sm">
+            <strong>Setup required:</strong> Supabase credentials are not configured.
+            Please add environment variables to enable authentication.
+          </p>
+        </div>
+      )}
 
       {/* Email form */}
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">

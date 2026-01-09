@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { supabase, hasValidCredentials } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 
 export function useAuth() {
@@ -11,19 +11,46 @@ export function useAuth() {
 
   // Initialize auth state from Supabase session
   useEffect(() => {
+    // If no valid credentials, skip Supabase and go to auth
+    if (!hasValidCredentials) {
+      setUser(null)
+      return
+    }
+
+    let mounted = true
+
+    // Set a timeout to handle slow responses
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        setUser(null)
+      }
+    }, 3000)
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
+      if (mounted) {
+        clearTimeout(timeout)
+        setUser(session?.user ?? null)
+      }
+    }).catch(() => {
+      if (mounted) {
+        clearTimeout(timeout)
+        setUser(null)
+      }
     })
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      if (mounted) {
+        setUser(session?.user ?? null)
+      }
     })
 
     return () => {
+      mounted = false
+      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [setUser])
