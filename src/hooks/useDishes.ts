@@ -153,29 +153,69 @@ export function useCreateDish() {
       // 1. Ensure restaurant exists
       let restaurant: Restaurant
 
-      const { data: existingRestaurant } = await supabase
-        .from('restaurants')
-        .select('*')
-        .eq('google_place_id', entryData.restaurant!.google_place_id)
-        .single()
-
-      if (existingRestaurant) {
-        restaurant = existingRestaurant
-      } else {
-        const { data: newRestaurant, error: restaurantError } = await supabase
+      if (entryData.isCustomPlace && entryData.customPlace) {
+        // Handle custom place (home cooking, food truck, pop-up, etc.)
+        // Check if user already has a custom place with the same name and city
+        const { data: existingCustomPlace } = await supabase
           .from('restaurants')
-          .insert({
-            google_place_id: entryData.restaurant!.google_place_id,
-            name: entryData.restaurant!.name,
-            city: entryData.restaurant!.city,
-            address: entryData.restaurant!.address,
-            is_closed: false,
-          })
-          .select()
+          .select('*')
+          .eq('name', entryData.customPlace.name)
+          .eq('city', entryData.customPlace.city)
+          .eq('is_custom_place', true)
+          .eq('created_by', user.id)
           .single()
 
-        if (restaurantError) throw restaurantError
-        restaurant = newRestaurant
+        if (existingCustomPlace) {
+          restaurant = existingCustomPlace
+        } else {
+          const { data: newRestaurant, error: restaurantError } = await supabase
+            .from('restaurants')
+            .insert({
+              google_place_id: null,
+              name: entryData.customPlace.name,
+              city: entryData.customPlace.city,
+              address: entryData.customPlace.address || null,
+              is_closed: false,
+              is_custom_place: true,
+              place_type: entryData.customPlace.place_type,
+              created_by: user.id,
+            })
+            .select()
+            .single()
+
+          if (restaurantError) throw restaurantError
+          restaurant = newRestaurant
+        }
+      } else if (entryData.restaurant) {
+        // Handle Google Places restaurant
+        const { data: existingRestaurant } = await supabase
+          .from('restaurants')
+          .select('*')
+          .eq('google_place_id', entryData.restaurant.google_place_id)
+          .single()
+
+        if (existingRestaurant) {
+          restaurant = existingRestaurant
+        } else {
+          const { data: newRestaurant, error: restaurantError } = await supabase
+            .from('restaurants')
+            .insert({
+              google_place_id: entryData.restaurant.google_place_id,
+              name: entryData.restaurant.name,
+              city: entryData.restaurant.city,
+              address: entryData.restaurant.address,
+              is_closed: false,
+              is_custom_place: false,
+              place_type: 'restaurant',
+            })
+            .select()
+            .single()
+
+          if (restaurantError) throw restaurantError
+          restaurant = newRestaurant
+        }
+      } else {
+        throw new Error('No restaurant or custom place provided')
       }
 
       // 2. Check for existing dish at this restaurant (fuzzy match)
