@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ProtectedRoute } from './components/layout'
-import { AuthPage, HomePage, EntryPage, ComparePage, LeaderboardPage } from './pages'
+import { AuthPage, HomePage, EntryPage, ComparePage, LeaderboardPage, ManagePlacesPage } from './pages'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +50,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <LeaderboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/places"
+            element={
+              <ProtectedRoute>
+                <ManagePlacesPage />
               </ProtectedRoute>
             }
           />
