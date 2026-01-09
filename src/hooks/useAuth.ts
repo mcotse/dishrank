@@ -11,6 +11,20 @@ export function useAuth() {
 
   // Initialize auth state from Supabase session
   useEffect(() => {
+    // Check for auth errors in URL hash (from failed magic link)
+    const hash = window.location.hash
+    if (hash.includes('error=')) {
+      const params = new URLSearchParams(hash.substring(1))
+      const errorDesc = params.get('error_description')
+      if (errorDesc) {
+        setAuthError(decodeURIComponent(errorDesc.replace(/\+/g, ' ')))
+      }
+      // Clear the hash
+      window.history.replaceState(null, '', window.location.pathname)
+      setUser(null)
+      return
+    }
+
     // If no valid credentials, skip Supabase and go to auth
     if (!hasValidCredentials) {
       setUser(null)
