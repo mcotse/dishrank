@@ -2,10 +2,32 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
+
+// Get version info
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
+const getGitInfo = () => {
+  try {
+    const commitHash = execSync('git rev-parse --short HEAD').toString().trim()
+    const commitCount = execSync('git rev-list --count HEAD').toString().trim()
+    const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
+    return { commitHash, commitCount, branch }
+  } catch {
+    return { commitHash: 'unknown', commitCount: '0', branch: 'unknown' }
+  }
+}
+const gitInfo = getGitInfo()
 
 // https://vite.dev/config/
 export default defineConfig({
   base: '/dishrank/',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_NUMBER__: JSON.stringify(gitInfo.commitCount),
+    __COMMIT_HASH__: JSON.stringify(gitInfo.commitHash),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     react(),
     tailwindcss(),

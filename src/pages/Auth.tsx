@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { Button, Input } from '../components/ui'
+import { Button, Input, VersionInfo } from '../components/ui'
 
 export function AuthPage() {
   const navigate = useNavigate()
@@ -151,6 +151,9 @@ export function AuthPage() {
       <p className="text-xs text-gray-400 text-center mt-8 max-w-xs">
         We'll send you a magic link to sign in. No password needed.
       </p>
+
+      {/* Version */}
+      <VersionInfo />
     </div>
   )
 }
