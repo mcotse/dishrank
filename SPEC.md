@@ -51,13 +51,17 @@ User
 ├── created_at
 └── settings (JSON)
 
-Restaurant
+Restaurant (also used for Custom Places)
 ├── id (UUID)
-├── google_place_id (unique, from Places API)
+├── google_place_id (unique, from Places API - NULL for custom places)
 ├── name
 ├── city
 ├── address
 ├── is_closed (boolean)
+├── is_custom_place (boolean, default: false)
+├── place_type (enum: restaurant, home, food_truck, popup, other)
+├── photo_url (optional, for custom places)
+├── created_by (FK User, for custom places)
 └── created_at
 
 CanonicalDish
@@ -346,6 +350,108 @@ Each user has a unique invite link: `dishrank.app/u/{username}`
 
 v1 launches without push notifications. Users check the app when they want.
 
+### 5.7 Custom Places (P1)
+
+Support for ranking dishes from non-Google-registered locations like home cooking, food trucks, pop-ups, or friends' kitchens.
+
+#### Place Types
+
+| Type | Icon | Description |
+|------|------|-------------|
+| `home` | 🏠 | Home-cooked meals |
+| `food_truck` | 🚚 | Food trucks without Google listing |
+| `popup` | 🎪 | Pop-up restaurants, events |
+| `other` | 📍 | Any other non-registered location |
+
+#### Custom Place Creation
+
+**Two entry points:**
+
+1. **During dish entry (Step 2):**
+   - After searching restaurants, show "Can't find it? Add a custom place"
+   - Opens custom place creation flow
+
+2. **Manage Places screen:**
+   - Accessible from profile/settings
+   - List all user's custom places
+   - Edit, delete, or add new places
+
+#### Custom Place Creation Flow
+
+```
+┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐
+│                      │    │                      │    │                      │
+│  What type of place? │    │  Name this place     │    │  What city?          │
+│                      │    │                      │    │                      │
+│  ○ Home         🏠   │    │  ┌────────────────┐  │    │  ┌────────────────┐  │
+│  ○ Food Truck   🚚   │    │  │ Mom's Kitchen  │  │    │  │ San Francisco  │  │
+│  ○ Pop-up       🎪   │    │  └────────────────┘  │    │  └────────────────┘  │
+│  ○ Other        📍   │    │                      │    │                      │
+│                      │    │  [Optional: Add 📷]  │    │                      │
+│      [ Next → ]      │    │      [ Next → ]      │    │      [ Done ✓ ]      │
+│                      │    │                      │    │                      │
+└──────────────────────┘    └──────────────────────┘    └──────────────────────┘
+```
+
+#### Custom Place Fields
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| Place Type | Yes | Enum: home, food_truck, popup, other |
+| Name | Yes | User-defined (e.g., "Mom's Kitchen", "Taco Truck on 5th") |
+| City | Yes | For leaderboard filtering |
+| Photo | No | Optional place photo |
+| Address | No | Optional, for personal reference |
+
+#### Visibility & Sharing
+
+| Aspect | Behavior |
+|--------|----------|
+| Public by default | Custom places and their dishes appear in community rankings |
+| Display name | Shows user's custom name (e.g., "Mom's Kitchen") |
+| Linkable | Other users can add dishes to existing custom places |
+| Discovery | Search by name; suggested when similar name+city exists |
+
+#### Linking to Existing Custom Places
+
+When creating a dish at a custom place:
+
+```python
+def find_existing_custom_place(name, city):
+    """
+    Check if a similar custom place already exists.
+    """
+    existing = CustomPlace.filter(city=city, is_custom_place=True)
+
+    for place in existing:
+        similarity = fuzzy_match(name, place.name)
+        if similarity > 0.90:
+            return place  # Suggest linking to existing
+
+    return None  # Create new
+```
+
+If match found:
+- Prompt: "Did you mean 'Mom's Kitchen' in San Francisco?"
+- User can confirm (link) or create new
+
+#### Leaderboard Filtering
+
+New filter option on leaderboard:
+
+| Filter | Options |
+|--------|---------|
+| Source | All (default) / Restaurants Only / Homemade Only |
+
+**"Homemade Only"** includes all custom place types (home, food_truck, popup, other).
+
+#### Ranking Behavior
+
+- Custom place dishes compete in the **same Elo pool** as restaurant dishes
+- No separate leaderboard; unified rankings
+- Filter allows users to isolate restaurant vs homemade if desired
+- Custom place dishes use same smart bracketing algorithm
+
 ---
 
 ## 6. Admin System
@@ -422,6 +528,8 @@ Admin reviews flagged pairs and decides to merge or reject.
 - [ ] Friends-only profile visibility
 - [ ] Personal vs Community leaderboard toggle
 - [ ] Admin merge queue
+- [ ] Custom Places (home cooking, food trucks, pop-ups)
+- [ ] Leaderboard source filter (All / Restaurants / Homemade)
 
 ### P2 (Post-Launch)
 
@@ -534,6 +642,15 @@ Admin reviews flagged pairs and decides to merge or reject.
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: 2026-01-08*
+*Document Version: 1.1*
+*Last Updated: 2026-01-09*
 *Author: Product Team*
+
+---
+
+## Changelog
+
+### v1.1 (2026-01-09)
+- Added **Custom Places** feature (Section 5.7) for ranking dishes from non-Google-registered locations
+- Updated Restaurant entity to support custom places with `is_custom_place`, `place_type`, `photo_url` fields
+- Added leaderboard source filter (All / Restaurants / Homemade)
