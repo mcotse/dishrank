@@ -1,0 +1,5 @@
+export { AuthPage } from './Auth'
+export { HomePage } from './Home'
+export { EntryPage } from './Entry'
+export { ComparePage } from './Compare'
+export { LeaderboardPage } from './Leaderboard'
