@@ -8,19 +8,26 @@ import {
   loadGoogleMapsScript,
   isPlacesApiAvailable,
 } from '../../lib/places'
+import { useSavedHomes, useCreatePlace } from '../../hooks/usePlaces'
 import { CustomPlaceForm } from './CustomPlaceForm'
-import type { PlacePrediction, PlaceType } from '../../types'
+import type { PlacePrediction, PlaceType, Restaurant } from '../../types'
 
 export function RestaurantStep() {
   const { data, setRestaurant, setCustomPlace, nextStep, prevStep } = useEntryStore()
   const [showCustomPlaceForm, setShowCustomPlaceForm] = useState(false)
   const [showHomeForm, setShowHomeForm] = useState(false)
+  const [showAddNewHome, setShowAddNewHome] = useState(false)
+  const [homeName, setHomeName] = useState('')
   const [homeCity, setHomeCity] = useState('')
   const [query, setQuery] = useState(data.restaurant?.name || '')
   const [predictions, setPredictions] = useState<PlacePrediction[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isApiReady, setIsApiReady] = useState(isPlacesApiAvailable())
   const [error, setError] = useState('')
+
+  // Saved homes
+  const { data: savedHomes, isLoading: isLoadingHomes } = useSavedHomes()
+  const createPlace = useCreatePlace()
 
   // Load Google Maps API
   useEffect(() => {
@@ -116,17 +123,43 @@ export function RestaurantStep() {
     nextStep()
   }
 
-  const handleHomeSubmit = () => {
+  const handleSelectSavedHome = (home: Restaurant) => {
+    setCustomPlace({
+      name: home.name,
+      city: home.city,
+      place_type: 'home',
+    })
+    setShowHomeForm(false)
+    nextStep()
+  }
+
+  const handleHomeSubmit = async () => {
     if (!homeCity.trim()) {
       setError('Please enter your city')
       return
     }
+
+    const name = homeName.trim() || 'Home'
+
+    // Save the new home for future use
+    try {
+      await createPlace.mutateAsync({
+        name,
+        city: homeCity.trim(),
+        place_type: 'home',
+      })
+    } catch (err) {
+      console.error('Failed to save home:', err)
+      // Continue anyway - we can still use the place for this entry
+    }
+
     setCustomPlace({
-      name: 'Home Cooking',
+      name,
       city: homeCity.trim(),
       place_type: 'home',
     })
     setShowHomeForm(false)
+    setShowAddNewHome(false)
     nextStep()
   }
 
@@ -144,13 +177,88 @@ export function RestaurantStep() {
     )
   }
 
-  // Show simplified home cooking form
+  // Show home cooking form with saved homes
   if (showHomeForm) {
+    // Show add new home form
+    if (showAddNewHome || (savedHomes && savedHomes.length === 0)) {
+      return (
+        <div className="flex-1 flex flex-col px-6 py-8">
+          <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
+            <button
+              onClick={() => {
+                if (savedHomes && savedHomes.length > 0) {
+                  setShowAddNewHome(false)
+                } else {
+                  setShowHomeForm(false)
+                }
+                setError('')
+                setHomeName('')
+                setHomeCity('')
+              }}
+              className="flex items-center gap-1 text-gray-500 mb-6 -ml-1"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+
+            <div className="text-center mb-8">
+              <span className="text-4xl mb-4 block">🏠</span>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                Add a New Home
+              </h2>
+              <p className="text-gray-500 text-sm">
+                Save this home for future dishes
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <Input
+                label="Home Name"
+                placeholder="e.g., Mom's House, My Apartment"
+                value={homeName}
+                onChange={(e) => {
+                  setHomeName(e.target.value)
+                  setError('')
+                }}
+                autoFocus
+              />
+              <Input
+                label="City"
+                placeholder="e.g., San Francisco"
+                value={homeCity}
+                onChange={(e) => {
+                  setHomeCity(e.target.value)
+                  setError('')
+                }}
+                error={error}
+              />
+            </div>
+
+            <div className="mt-auto pt-6">
+              <button
+                onClick={handleHomeSubmit}
+                disabled={!homeCity.trim() || createPlace.isPending}
+                className="w-full py-3.5 px-6 bg-orange-500 text-white text-lg font-medium rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {createPlace.isPending ? 'Saving...' : 'Continue'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Show saved homes list
     return (
       <div className="flex-1 flex flex-col px-6 py-8">
         <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
           <button
-            onClick={() => setShowHomeForm(false)}
+            onClick={() => {
+              setShowHomeForm(false)
+              setError('')
+            }}
             className="flex items-center gap-1 text-gray-500 mb-6 -ml-1"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,31 +273,48 @@ export function RestaurantStep() {
               Home Cooking
             </h2>
             <p className="text-gray-500 text-sm">
-              Just need to know your city
+              Select a saved home or add a new one
             </p>
           </div>
 
-          <Input
-            label="City"
-            placeholder="e.g., San Francisco"
-            value={homeCity}
-            onChange={(e) => {
-              setHomeCity(e.target.value)
-              setError('')
-            }}
-            error={error}
-            autoFocus
-          />
+          {isLoadingHomes ? (
+            <div className="flex justify-center py-8">
+              <svg className="animate-spin h-6 w-6 text-orange-500" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {savedHomes?.map((home) => (
+                <button
+                  key={home.id}
+                  onClick={() => handleSelectSavedHome(home)}
+                  className="w-full flex items-center gap-3 py-3 px-4 bg-white border-2 border-gray-200 rounded-xl text-left hover:border-orange-300 hover:bg-orange-50 transition-colors"
+                >
+                  <span className="text-2xl">🏠</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{home.name}</p>
+                    <p className="text-sm text-gray-500 truncate">{home.city}</p>
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ))}
 
-          <div className="mt-auto pt-6">
-            <button
-              onClick={handleHomeSubmit}
-              disabled={!homeCity.trim()}
-              className="w-full py-3.5 px-6 bg-orange-500 text-white text-lg font-medium rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Continue
-            </button>
-          </div>
+              {/* Add new home button */}
+              <button
+                onClick={() => setShowAddNewHome(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-orange-400 hover:text-orange-600 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add a New Home
+              </button>
+            </div>
+          )}
         </div>
       </div>
     )
