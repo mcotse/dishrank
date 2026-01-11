@@ -12,9 +12,21 @@ export function ComparisonView() {
   const { data: userDishesData } = useUserDishes()
   const hasInitialized = useRef(false)
 
-  // Extract canonical dishes from user entries - memoize to prevent infinite loops
+  // Extract canonical dishes from user entries - attach user_entry for photo
   const allDishes: DishWithDetails[] = useMemo(
-    () => userDishesData?.map((entry) => entry.canonical_dish as DishWithDetails) || [],
+    () =>
+      userDishesData?.map((entry) => ({
+        ...(entry.canonical_dish as DishWithDetails),
+        user_entry: {
+          id: entry.id,
+          user_id: entry.user_id,
+          canonical_dish_id: entry.canonical_dish_id,
+          photo_url: entry.photo_url,
+          is_deleted: entry.is_deleted,
+          created_at: entry.created_at,
+          updated_at: entry.updated_at,
+        },
+      })) || [],
     [userDishesData]
   )
 

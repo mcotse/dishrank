@@ -54,7 +54,7 @@ interface CardImageProps {
 export function CardImage({ src, alt, fallback }: CardImageProps) {
   if (!src) {
     return (
-      <div className="aspect-dish bg-gray-100 rounded-xl flex items-center justify-center">
+      <div className="aspect-dish bg-gray-100 rounded-xl flex items-center justify-center" data-testid="card-image-placeholder">
         {fallback || (
           <svg
             className="w-12 h-12 text-gray-300"

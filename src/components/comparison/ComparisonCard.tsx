@@ -21,6 +21,7 @@ export function ComparisonCard({ dish, onSelect, disabled }: ComparisonCardProps
         active:scale-[0.98] transition-transform
       `}
       onClick={disabled ? undefined : onSelect}
+      data-testid="comparison-card"
     >
       {/* Photo */}
       <CardImage src={photoUrl} alt={dish.name} />

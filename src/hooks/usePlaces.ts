@@ -26,6 +26,30 @@ export function useCustomPlaces() {
   })
 }
 
+// Fetch user's saved homes specifically
+export function useSavedHomes() {
+  const { user } = useAuthStore()
+
+  return useQuery({
+    queryKey: ['savedHomes', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return []
+
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('is_custom_place', true)
+        .eq('place_type', 'home')
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data as Restaurant[]
+    },
+    enabled: !!user?.id,
+  })
+}
+
 // Create a new custom place
 export function useCreatePlace() {
   const queryClient = useQueryClient()
