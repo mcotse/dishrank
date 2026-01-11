@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEntryStore } from '../../stores/entryStore'
 import { useCreateDish } from '../../hooks/useDishes'
@@ -11,6 +11,7 @@ export function EntryWizard() {
   const navigate = useNavigate()
   const { currentStep, data, reset } = useEntryStore()
   const createDish = useCreateDish()
+  const [error, setError] = useState<string | null>(null)
 
   // Reset wizard on mount
   useEffect(() => {
@@ -18,6 +19,24 @@ export function EntryWizard() {
   }, [reset])
 
   const handleComplete = async () => {
+    setError(null)
+
+    // Validate required data before submitting
+    if (!data.dishName?.trim()) {
+      setError('Please enter a dish name')
+      return
+    }
+
+    if (!data.restaurant && !data.isCustomPlace) {
+      setError('Please select a restaurant or add a custom place')
+      return
+    }
+
+    if (data.isCustomPlace && !data.customPlace) {
+      setError('Please complete the custom place details')
+      return
+    }
+
     try {
       const result = await createDish.mutateAsync(data)
 
@@ -30,8 +49,10 @@ export function EntryWizard() {
           state: { newDishId: result.canonicalDish?.id },
         })
       }
-    } catch (error) {
-      console.error('Failed to create dish:', error)
+    } catch (err) {
+      console.error('Failed to create dish:', err)
+      const message = err instanceof Error ? err.message : 'Failed to save dish. Please try again.'
+      setError(message)
     }
   }
 
@@ -59,6 +80,7 @@ export function EntryWizard() {
           <PhotoStep
             onComplete={handleComplete}
             isSubmitting={createDish.isPending}
+            error={error}
           />
         )}
       </div>

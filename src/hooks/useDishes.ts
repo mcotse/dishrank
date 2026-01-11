@@ -281,23 +281,31 @@ export function useCreateDish() {
         canonicalDish = newDish
       }
 
-      // 3. Upload photo if provided
+      // 3. Upload photo/video if provided
       let photoUrl: string | null = null
 
       if (entryData.photoFile) {
-        // Compress image
-        const compressedFile = await imageCompression(entryData.photoFile, {
-          maxSizeMB: 0.5,
-          maxWidthOrHeight: 1200,
-          useWebWorker: true,
-        })
+        const isVideo = entryData.photoFile.type.startsWith('video/')
+        let fileToUpload: File | Blob = entryData.photoFile
+        let contentType = entryData.photoFile.type
+        let fileExtension = isVideo ? 'mp4' : 'jpg'
 
-        const fileName = `${user.id}/${canonicalDish.id}/${Date.now()}.jpg`
+        // Only compress images, not videos
+        if (!isVideo) {
+          fileToUpload = await imageCompression(entryData.photoFile, {
+            maxSizeMB: 0.5,
+            maxWidthOrHeight: 1200,
+            useWebWorker: true,
+          })
+          contentType = 'image/jpeg'
+        }
+
+        const fileName = `${user.id}/${canonicalDish.id}/${Date.now()}.${fileExtension}`
 
         const { error: uploadError } = await supabase.storage
           .from('dish-photos')
-          .upload(fileName, compressedFile, {
-            contentType: 'image/jpeg',
+          .upload(fileName, fileToUpload, {
+            contentType,
           })
 
         if (uploadError) {

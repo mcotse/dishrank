@@ -14,6 +14,8 @@ import type { PlacePrediction, PlaceType } from '../../types'
 export function RestaurantStep() {
   const { data, setRestaurant, setCustomPlace, nextStep, prevStep } = useEntryStore()
   const [showCustomPlaceForm, setShowCustomPlaceForm] = useState(false)
+  const [showHomeForm, setShowHomeForm] = useState(false)
+  const [homeCity, setHomeCity] = useState('')
   const [query, setQuery] = useState(data.restaurant?.name || '')
   const [predictions, setPredictions] = useState<PlacePrediction[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -114,6 +116,20 @@ export function RestaurantStep() {
     nextStep()
   }
 
+  const handleHomeSubmit = () => {
+    if (!homeCity.trim()) {
+      setError('Please enter your city')
+      return
+    }
+    setCustomPlace({
+      name: 'Home Cooking',
+      city: homeCity.trim(),
+      place_type: 'home',
+    })
+    setShowHomeForm(false)
+    nextStep()
+  }
+
   // Show custom place form
   if (showCustomPlaceForm) {
     return (
@@ -123,6 +139,57 @@ export function RestaurantStep() {
             onSubmit={handleCustomPlaceSubmit}
             onCancel={() => setShowCustomPlaceForm(false)}
           />
+        </div>
+      </div>
+    )
+  }
+
+  // Show simplified home cooking form
+  if (showHomeForm) {
+    return (
+      <div className="flex-1 flex flex-col px-6 py-8">
+        <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
+          <button
+            onClick={() => setShowHomeForm(false)}
+            className="flex items-center gap-1 text-gray-500 mb-6 -ml-1"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+
+          <div className="text-center mb-8">
+            <span className="text-4xl mb-4 block">🏠</span>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Home Cooking
+            </h2>
+            <p className="text-gray-500 text-sm">
+              Just need to know your city
+            </p>
+          </div>
+
+          <Input
+            label="City"
+            placeholder="e.g., San Francisco"
+            value={homeCity}
+            onChange={(e) => {
+              setHomeCity(e.target.value)
+              setError('')
+            }}
+            error={error}
+            autoFocus
+          />
+
+          <div className="mt-auto pt-6">
+            <button
+              onClick={handleHomeSubmit}
+              disabled={!homeCity.trim()}
+              className="w-full py-3.5 px-6 bg-orange-500 text-white text-lg font-medium rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continue
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -215,23 +282,31 @@ export function RestaurantStep() {
           </button>
         )}
 
-        {/* Custom place option */}
+        {/* Quick place options */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <p className="text-sm text-gray-500 mb-3">
-            Can't find it? Not a restaurant?
+            Not a restaurant?
           </p>
+
+          {/* Home Cooking - prominent button */}
+          <button
+            onClick={() => setShowHomeForm(true)}
+            className="w-full flex items-center gap-3 py-3 px-4 bg-orange-50 border-2 border-orange-200 rounded-xl text-orange-700 hover:bg-orange-100 hover:border-orange-300 transition-colors mb-3"
+          >
+            <span className="text-2xl">🏠</span>
+            <span className="font-medium">Home Cooking</span>
+          </button>
+
+          {/* Other custom places */}
           <button
             onClick={() => setShowCustomPlaceForm(true)}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-orange-300 hover:text-orange-600 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Add a custom place
+            Other (food truck, pop-up, etc.)
           </button>
-          <p className="text-xs text-gray-400 mt-2 text-center">
-            For home cooking, food trucks, pop-ups, etc.
-          </p>
         </div>
       </div>
 

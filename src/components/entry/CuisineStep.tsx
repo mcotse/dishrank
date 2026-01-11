@@ -4,7 +4,15 @@ import { useCuisineCategories, useCuisineSubcategories } from '../../hooks/useDi
 import { Button, Select } from '../ui'
 
 export function CuisineStep() {
-  const { data, setCuisineCategory, setCuisineSubcategory, nextStep, prevStep } = useEntryStore()
+  const {
+    data,
+    setCuisineCategory,
+    setCuisineSubcategory,
+    setFusion,
+    toggleFusionCategory,
+    nextStep,
+    prevStep,
+  } = useEntryStore()
   const [selectedCategoryId, setSelectedCategoryId] = useState(data.cuisineCategory?.id || '')
 
   const { data: categories = [], isLoading: loadingCategories } = useCuisineCategories()
@@ -26,14 +34,24 @@ export function CuisineStep() {
     setCuisineSubcategory(subcategory || null)
   }
 
+  const handleFusionToggle = () => {
+    setFusion(!data.isFusion)
+    setSelectedCategoryId('')
+  }
+
   const handleSkip = () => {
     setCuisineCategory(null)
     setCuisineSubcategory(null)
+    setFusion(false)
     nextStep()
   }
 
   const handleContinue = () => {
     nextStep()
+  }
+
+  const isFusionCategorySelected = (categoryId: string) => {
+    return data.fusionCategories.some((c) => c.id === categoryId)
   }
 
   return (
@@ -52,57 +70,127 @@ export function CuisineStep() {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           What type of food is this?
         </h1>
-        <p className="text-gray-500 mb-8">
+        <p className="text-gray-500 mb-6">
           This helps with filtering and recommendations. Optional.
         </p>
 
-        <div className="space-y-4">
-          <Select
-            label="Cuisine Category"
-            value={selectedCategoryId}
-            onChange={handleCategoryChange}
-            placeholder="Select a category..."
-            options={categories.map((c) => ({
-              value: c.id,
-              label: c.name,
-            }))}
-            disabled={loadingCategories}
-          />
+        {/* Fusion toggle */}
+        <button
+          onClick={handleFusionToggle}
+          className={`w-full flex items-center justify-between p-4 rounded-xl border-2 mb-6 transition-all ${
+            data.isFusion
+              ? 'border-orange-500 bg-orange-50'
+              : 'border-gray-200 hover:border-gray-300'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🌏</span>
+            <div className="text-left">
+              <p className="font-medium text-gray-900">Fusion Cuisine</p>
+              <p className="text-sm text-gray-500">Select multiple cuisines</p>
+            </div>
+          </div>
+          <div
+            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+              data.isFusion
+                ? 'border-orange-500 bg-orange-500'
+                : 'border-gray-300'
+            }`}
+          >
+            {data.isFusion && (
+              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </div>
+        </button>
 
-          {selectedCategoryId && (
-            <Select
-              label="Subcategory (optional)"
-              value={data.cuisineSubcategory?.id || ''}
-              onChange={handleSubcategoryChange}
-              placeholder="Select a subcategory..."
-              options={subcategories.map((s) => ({
-                value: s.id,
-                label: s.name,
-              }))}
-              disabled={loadingSubcategories}
-            />
-          )}
-        </div>
-
-        {/* Quick select chips for common cuisines */}
-        {!selectedCategoryId && categories.length > 0 && (
-          <div className="mt-6">
-            <p className="text-sm text-gray-500 mb-3">Quick select:</p>
+        {/* Fusion mode - multi-select */}
+        {data.isFusion ? (
+          <div>
+            <p className="text-sm text-gray-500 mb-3">
+              Select the cuisines that make up this fusion dish:
+            </p>
             <div className="flex flex-wrap gap-2">
-              {categories.slice(0, 8).map((category) => (
+              {categories.map((category) => (
                 <button
                   key={category.id}
-                  onClick={() => {
-                    setSelectedCategoryId(category.id)
-                    setCuisineCategory(category)
-                  }}
-                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium text-gray-700 transition-colors"
+                  onClick={() => toggleFusionCategory(category)}
+                  className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                    isFusionCategorySelected(category.id)
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
                   {category.name}
+                  {isFusionCategorySelected(category.id) && (
+                    <span className="ml-1">✓</span>
+                  )}
                 </button>
               ))}
             </div>
+            {data.fusionCategories.length > 0 && (
+              <p className="mt-4 text-sm text-gray-600">
+                Selected: {data.fusionCategories.map((c) => c.name).join(' × ')}
+              </p>
+            )}
           </div>
+        ) : (
+          <>
+            {/* Regular single cuisine selection */}
+            <div className="space-y-4">
+              <Select
+                label="Cuisine Category"
+                value={selectedCategoryId}
+                onChange={handleCategoryChange}
+                placeholder="Select a category..."
+                options={categories.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                }))}
+                disabled={loadingCategories}
+              />
+
+              {selectedCategoryId && (
+                <Select
+                  label="Subcategory (optional)"
+                  value={data.cuisineSubcategory?.id || ''}
+                  onChange={handleSubcategoryChange}
+                  placeholder="Select a subcategory..."
+                  options={subcategories.map((s) => ({
+                    value: s.id,
+                    label: s.name,
+                  }))}
+                  disabled={loadingSubcategories}
+                />
+              )}
+            </div>
+
+            {/* Quick select chips for common cuisines */}
+            {!selectedCategoryId && categories.length > 0 && (
+              <div className="mt-6">
+                <p className="text-sm text-gray-500 mb-3">Quick select:</p>
+                <div className="flex flex-wrap gap-2">
+                  {categories.slice(0, 8).map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        setSelectedCategoryId(category.id)
+                        setCuisineCategory(category)
+                      }}
+                      className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium text-gray-700 transition-colors"
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

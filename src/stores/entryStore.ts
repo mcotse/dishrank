@@ -25,6 +25,9 @@ interface EntryState {
   }) => void
   setCuisineCategory: (category: CuisineCategory | null) => void
   setCuisineSubcategory: (subcategory: CuisineSubcategory | null) => void
+  setFusion: (isFusion: boolean) => void
+  setFusionCategories: (categories: CuisineCategory[]) => void
+  toggleFusionCategory: (category: CuisineCategory) => void
   setPhoto: (file: File | null, preview: string | null) => void
 
   // Reset
@@ -40,6 +43,8 @@ const initialData: DishEntryData = {
   isCustomPlace: false,
   cuisineCategory: null,
   cuisineSubcategory: null,
+  isFusion: false,
+  fusionCategories: [],
   photoFile: null,
   photoPreview: null,
 }
@@ -105,6 +110,35 @@ export const useEntryStore = create<EntryState>()((set, get) => ({
     set((state) => ({
       data: { ...state.data, cuisineSubcategory },
     })),
+
+  setFusion: (isFusion) =>
+    set((state) => ({
+      data: {
+        ...state.data,
+        isFusion,
+        // Clear regular category when switching to fusion mode
+        cuisineCategory: isFusion ? null : state.data.cuisineCategory,
+        cuisineSubcategory: isFusion ? null : state.data.cuisineSubcategory,
+        // Clear fusion categories when switching to regular mode
+        fusionCategories: isFusion ? state.data.fusionCategories : [],
+      },
+    })),
+
+  setFusionCategories: (fusionCategories) =>
+    set((state) => ({
+      data: { ...state.data, fusionCategories },
+    })),
+
+  toggleFusionCategory: (category) =>
+    set((state) => {
+      const exists = state.data.fusionCategories.some((c) => c.id === category.id)
+      const fusionCategories = exists
+        ? state.data.fusionCategories.filter((c) => c.id !== category.id)
+        : [...state.data.fusionCategories, category]
+      return {
+        data: { ...state.data, fusionCategories },
+      }
+    }),
 
   setPhoto: (photoFile, photoPreview) =>
     set((state) => ({

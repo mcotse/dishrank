@@ -5,9 +5,10 @@ import { Button } from '../ui'
 interface PhotoStepProps {
   onComplete: () => void
   isSubmitting: boolean
+  error?: string | null
 }
 
-export function PhotoStep({ onComplete, isSubmitting }: PhotoStepProps) {
+export function PhotoStep({ onComplete, isSubmitting, error }: PhotoStepProps) {
   const { data, setPhoto, prevStep } = useEntryStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragActive, setDragActive] = useState(false)
@@ -15,15 +16,22 @@ export function PhotoStep({ onComplete, isSubmitting }: PhotoStepProps) {
   const handleFileSelect = (file: File | null) => {
     if (!file) return
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
+    // Validate file type - allow images and videos
+    const isImage = file.type.startsWith('image/')
+    const isVideo = file.type.startsWith('video/')
+
+    if (!isImage && !isVideo) {
+      alert('Please select an image or video file')
       return
     }
 
-    // Validate file size (max 10MB before compression)
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Image is too large. Please select an image under 10MB.')
+    // Validate file size (max 10MB for images, 50MB for videos before compression)
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      alert(isVideo
+        ? 'Video is too large. Please select a video under 50MB.'
+        : 'Image is too large. Please select an image under 10MB.'
+      )
       return
     }
 
@@ -90,8 +98,14 @@ export function PhotoStep({ onComplete, isSubmitting }: PhotoStepProps) {
         <div className="bg-gray-50 rounded-xl p-4 mb-6">
           <p className="text-sm text-gray-500">You're adding:</p>
           <p className="font-semibold text-gray-900">{data.dishName}</p>
-          <p className="text-gray-600">{data.restaurant?.name}</p>
-          {data.cuisineCategory && (
+          <p className="text-gray-600">
+            {data.isCustomPlace ? data.customPlace?.name : data.restaurant?.name}
+          </p>
+          {data.isFusion && data.fusionCategories.length > 0 ? (
+            <p className="text-sm text-gray-500">
+              🌏 {data.fusionCategories.map((c) => c.name).join(' × ')} Fusion
+            </p>
+          ) : data.cuisineCategory && (
             <p className="text-sm text-gray-500">
               {data.cuisineCategory.name}
               {data.cuisineSubcategory && ` > ${data.cuisineSubcategory.name}`}
@@ -99,15 +113,24 @@ export function PhotoStep({ onComplete, isSubmitting }: PhotoStepProps) {
           )}
         </div>
 
-        {/* Photo upload area */}
+        {/* Photo/Video upload area */}
         {data.photoPreview ? (
           <div className="relative">
             <div className="aspect-dish overflow-hidden rounded-xl">
-              <img
-                src={data.photoPreview}
-                alt="Preview"
-                className="w-full h-full object-cover"
-              />
+              {data.photoFile?.type.startsWith('video/') ? (
+                <video
+                  src={data.photoPreview}
+                  className="w-full h-full object-cover"
+                  controls
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={data.photoPreview}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
             <button
               onClick={handleRemovePhoto}
@@ -163,30 +186,37 @@ export function PhotoStep({ onComplete, isSubmitting }: PhotoStepProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           onChange={handleInputChange}
           className="hidden"
         />
       </div>
 
-      <div className="mt-auto pt-6 flex gap-3">
-        <Button
-          onClick={handleSkip}
-          variant="secondary"
-          fullWidth
-          size="lg"
-          disabled={isSubmitting}
-        >
-          Skip
-        </Button>
-        <Button
-          onClick={onComplete}
-          fullWidth
-          size="lg"
-          isLoading={isSubmitting}
-        >
-          Done
-        </Button>
+      <div className="mt-auto pt-6">
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+        <div className="flex gap-3">
+          <Button
+            onClick={handleSkip}
+            variant="secondary"
+            fullWidth
+            size="lg"
+            disabled={isSubmitting}
+          >
+            Skip
+          </Button>
+          <Button
+            onClick={onComplete}
+            fullWidth
+            size="lg"
+            isLoading={isSubmitting}
+          >
+            Done
+          </Button>
+        </div>
       </div>
     </div>
   )

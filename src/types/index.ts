@@ -123,6 +123,9 @@ export interface DishEntryData {
   isCustomPlace: boolean
   cuisineCategory: CuisineCategory | null
   cuisineSubcategory: CuisineSubcategory | null
+  // Fusion support - additional cuisines when dish is a fusion
+  isFusion: boolean
+  fusionCategories: CuisineCategory[]
   photoFile: File | null
   photoPreview: string | null
 }
