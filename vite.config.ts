@@ -36,8 +36,8 @@ export default defineConfig({
       scope: '/dishrank/',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'DishRank',
-        short_name: 'DishRank',
+        name: 'Deli',
+        short_name: 'Deli',
         description: 'Rank your favorite dishes with Elo ratings',
         theme_color: '#f97316',
         background_color: '#ffffff',

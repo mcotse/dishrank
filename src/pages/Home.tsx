@@ -14,7 +14,7 @@ export function HomePage() {
   const recentDishes = userDishes.slice(0, 5)
 
   return (
-    <Layout title="DishRank">
+    <Layout title="Deli">
       <div className="px-4 py-6 space-y-6">
         {/* Welcome section */}
         <div className="flex items-center justify-between">

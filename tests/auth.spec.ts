@@ -7,7 +7,7 @@ test.describe('Authentication', () => {
     await page.goto(`${BASE_URL}/auth`);
 
     // Check branding elements
-    await expect(page.getByRole('heading', { name: 'DishRank' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Deli' })).toBeVisible();
     await expect(page.getByText('Rank your favorite dishes with Elo ratings')).toBeVisible();
   });
 

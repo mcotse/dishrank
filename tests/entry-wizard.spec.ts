@@ -14,7 +14,7 @@ test.describe('Entry Wizard Flow', () => {
 
       // Should redirect to auth page
       await expect(page).toHaveURL(/\/auth/);
-      await expect(page.getByRole('heading', { name: 'DishRank' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Deli' })).toBeVisible();
     });
   });
 
